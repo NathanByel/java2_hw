@@ -54,6 +54,9 @@ public class Main {
     }
 
     private static void printArrayInfo(String[] array) {
+        if(array == null) {
+            return;
+        }
         Map<String, Integer> printMap = new TreeMap<>();
         Integer num;
         for (String s : array) {

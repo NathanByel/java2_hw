@@ -11,6 +11,12 @@ public class PhoneBook {
     private Map<String, HashSet<String>> peoples = new TreeMap<>();
 
     public void add(String surname, String phoneNumber) {
+        if( (surname == null) || (phoneNumber == null) ) {
+            throw new IllegalArgumentException("Surname or Phone number can't be null");
+        }
+        if( (surname.length() == 0) || (phoneNumber.length() == 0) ) {
+            throw new IllegalArgumentException("Surname or Phone number can't be empty");
+        }
         HashSet<String> numbersList;      // Почему Idea подчеркивает numbersList везде?
         numbersList = peoples.get(surname);
         if (numbersList == null) {
@@ -27,6 +33,9 @@ public class PhoneBook {
      * Или null если фамилия не найдена.
      */
     public String[] get(String surname) {
+        if(surname == null) {
+            return null;
+        }
         HashSet<String> res = peoples.get(surname);
         return (res == null) ? null : res.toArray(new String[0]);
     }
