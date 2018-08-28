@@ -60,11 +60,13 @@ public class Main {
         Map<String, Integer> printMap = new TreeMap<>();
         Integer num;
         for (String s : array) {
-            // <- Если перенести сюда "Integer num;" то на каждой итерации
-            // будет новый объект Integer создаваться или Java машина оптимизирует это?
-            num = printMap.get(s);
-            num = (num == null) ? 1 : (num + 1);
-            printMap.put(s, num);
+            if(s != null) {
+                // <- Если перенести сюда "Integer num;" то на каждой итерации
+                // будет новый объект Integer создаваться или Java машина оптимизирует это?
+                num = printMap.get(s);
+                num = (num == null) ? 1 : (num + 1);
+                printMap.put(s, num);
+            }
         }
 
         for (Map.Entry<String, Integer> item : printMap.entrySet()) {
