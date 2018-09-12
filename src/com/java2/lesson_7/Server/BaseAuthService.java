@@ -9,8 +9,8 @@ public class BaseAuthService implements AuthService {
     }
 
     @Override
-    public String getNickByLoginPass(String login, String pass) {
-        return null;
+    public boolean checkUser(String nickName, String pass) {
+        return true;
     }
 
     @Override

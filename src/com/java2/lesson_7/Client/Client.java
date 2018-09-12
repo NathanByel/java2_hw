@@ -1,12 +1,11 @@
 package com.java2.lesson_7.Client;
-import com.java2.lesson_7.Log;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
-public class Client {
+public class Client implements ClientController {
     private final String SERVER_ADDR = "localhost";
     private final int SERVER_PORT = 8189;
     private boolean connected = false;
@@ -14,14 +13,15 @@ public class Client {
     private Scanner netIn;
     private PrintWriter netOut;
 
+    private ClientUI clientUI;
 
     public static void main(String[] args) {
         new Client();
     }
 
     public Client() {
+        clientUI = new MainWindow(this);
         connectThreadStart();
-        msgSenderThreadStart();
         msgReceiverThreadStart();
     }
 
@@ -43,35 +43,17 @@ public class Client {
         }).start();
     }
 
-    private void msgSenderThreadStart() {
-        new Thread(() -> {
-            Scanner consoleIn = new Scanner(System.in);
-            while(true) {
-                String sendText = consoleIn.nextLine()
-                        .replace("<", "")
-                        .replace(">", "")
-                        .trim();
-
-                if (sendText.length() > 0) {
-                    if (connected) {
-                        if( !netSend(sendText) ) {
-                            System.out.println("Ошибка сети!");
-                        }
-                    } else {
-                        System.out.println("Нет подключения к серверу!");
-                    }
-                }
-            }
-        }).start();
-    }
-
     private void msgReceiverThreadStart() {
         new Thread(() -> {
             while(true) {
                 if (connected) {
-                    String inText = netReceive();
-                    if(inText != null) {
-                        System.out.println("Сервер: " + inText);
+                    String netData = netReceive();
+                    if(netData != null) {
+                        if(netData.startsWith("/")) {
+
+                        } else {
+                            clientUI.addMessage(netData);
+                        }
                     } else {
                         System.out.println("Ошибка сети!");
                     }
@@ -115,7 +97,8 @@ public class Client {
             netOut = new PrintWriter(socket.getOutputStream());
 
             System.out.println("Подключено!");
-            System.out.println("Можно отправлять текст.");
+            clientUI.addMessage("Подключено!");
+            netSend("/auth aaa sss");
             connected = true;
         } catch (IOException e) {
             System.out.println("Ошибка сети...");
@@ -132,5 +115,22 @@ public class Client {
         }
         if(netIn != null) netIn.close();
         if(netOut != null) netOut.close();
+    }
+
+    @Override
+    public void disconnect() {
+
+    }
+
+    @Override
+    public void sendMessage(String msg) {
+        if (connected) {
+            if( !netSend(msg) ) {
+                System.out.println("Ошибка сети!");
+            }
+        } else {
+            clientUI.addMessage("Нет подключения к серверу!");
+            System.out.println("Нет подключения к серверу!");
+        }
     }
 }
