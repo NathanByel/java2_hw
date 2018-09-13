@@ -1,5 +1,6 @@
 package com.java2.lesson_7.Server;
 
+import com.java2.lesson_7.CmdRsp;
 import com.java2.lesson_7.Log;
 import com.java2.lesson_7.User;
 
@@ -11,31 +12,16 @@ import java.util.Scanner;
 public class ClientHandler {
     private static final String TAG = "CLIENT HANDLER";
 
-    private static final String CMD_ALIVE           = "/alive";
-    private static final String CMD_END             = "/end";
-    private static final String CMD_AUTH            = "/auth";
-    private static final String CMD_TO_USER         = "/to_user";
-    private static final String CMD_GET_USERS       = "/get_users";
-
-    private static final String RSP_OK              = "/ok";
-    private static final String RSP_ERR             = "/err";
-    private static final String RSP_WRONG_CMD       = "/wrong_cmd";
-    private static final String RSP_WRONG_PARAM     = "/wrong_param";
-    private static final String RSP_NEED_AUTH       = "/need_auth";
-    private static final String RSP_WRONG_AUTH      = "/wrong_auth";
-    private static final String RSP_NICK_BUSY       = "/nick_busy";
-    private static final String RSP_USER_NOT_FOUND  = "/not_found";
-
-
     private User user;
     private Server server;
     private Socket socket;
 
     private Scanner netIn;
     private PrintWriter netOut;
-    private long clientLastAliveTime = 0;
+    private long clientLastAliveTime = 0; // Не используется пока
 
     private boolean run = true;
+    private boolean subscribed = false;
 
     // *****************************************************************************************************************
     public ClientHandler(Server server, Socket socket) {
@@ -54,17 +40,21 @@ public class ClientHandler {
         new Thread(() -> {
             String netData = netReceive();
             String authRes = checkAuth(netData);
-            if( !authRes.equals(RSP_OK) ) {
+            if( !authRes.equals(CmdRsp.RSP_OK) ) {
                 Log.e(TAG, "Клиент " + this.hashCode() + " " + authRes + " Необходима регистрация.");
                 sendMessage(authRes);
-                sendMessage(RSP_NEED_AUTH);
+                sendMessage(CmdRsp.RSP_NEED_AUTH);
                 dropClient();
                 return;
             }
 
+            sendMessage(CmdRsp.RSP_OK_AUTH);
             server.subscribe(this);
-            sendMessage(RSP_OK);
+            subscribed = true;
 
+            sendMessage("Добро пожаловать!");
+            sendMessage("Для отправки личных сообщений используйте формат:");
+            sendMessage("/имя сообщение");
             while(run) {
                 netData = netReceive();
                 if(netData != null) {
@@ -72,9 +62,9 @@ public class ClientHandler {
                         parseCmd(netData);
                     } else {
                         if(server.sendBroadcastMessage(this, netData)) {
-                            sendMessage(RSP_OK);
+                            sendMessage(CmdRsp.RSP_OK);
                         } else {
-                            sendMessage(RSP_ERR);
+                            sendMessage(CmdRsp.RSP_ERR);
                         }
                     }
                 } else {
@@ -85,54 +75,44 @@ public class ClientHandler {
     }
 
     private String checkAuth(String netData) {
-        if( (netData == null) || !netData.startsWith(CMD_AUTH) ) {
-            return RSP_WRONG_CMD;
-        }
+        if( (netData == null) || !netData.startsWith(CmdRsp.CMD_AUTH) ) return CmdRsp.RSP_WRONG_CMD;
 
         String[] cmdParts = netData.split(" ", 3);
-        if(cmdParts.length != 3) {
-            return RSP_WRONG_PARAM;
-        }
-
-        if( server.isNickNameBusy(cmdParts[1]) ) {
-            return RSP_NICK_BUSY;
-        }
-
-        if ( !server.getAuthService().checkUser(cmdParts[1], cmdParts[2]) ) {
-            return RSP_WRONG_AUTH;
-        }
+        if( cmdParts.length != 3 ) return CmdRsp.RSP_WRONG_PARAM;
+        if( server.isNickNameBusy(cmdParts[1]) ) return CmdRsp.RSP_NICK_BUSY;
+        if ( !server.getAuthService().checkUser(cmdParts[1], cmdParts[2]) ) return CmdRsp.RSP_WRONG_AUTH;
 
         user = new User(cmdParts[1], cmdParts[2]);
-        return RSP_OK;
+        return CmdRsp.RSP_OK;
     }
 
     private void parseCmd(String cmd) {
-        if(cmd.equals(CMD_ALIVE)) {
+        if(cmd.equals(CmdRsp.CMD_ALIVE)) {
             clientLastAliveTime = System.currentTimeMillis();
-            sendMessage(RSP_OK);
+            sendMessage(CmdRsp.RSP_OK);
             return;
-        } else if(cmd.equals(CMD_END)) {
+        } else if(cmd.equals(CmdRsp.CMD_END)) {
             Log.i(TAG, "Клиент " + user.getNickName() + " конец сессии.");
             dropClient();
             return;
-        } else if(cmd.equals(CMD_GET_USERS)) {
+        } else if(cmd.equals(CmdRsp.CMD_GET_USERS)) {
             server.sendUserList(this);
             //sendMessage(RSP_OK);
             return;
-        } else if(cmd.startsWith(CMD_TO_USER)) {
+        } else if(cmd.startsWith(CmdRsp.CMD_TO_USER)) {
             String[] cmdParts = cmd.split(" ", 3);
             if(cmdParts.length == 3) {
                 if( server.sendPrivateMessage(this, cmdParts[1], cmdParts[2]) ) {
-                    sendMessage(RSP_OK);
+                    sendMessage(CmdRsp.RSP_OK);
                 } else {
-                    sendMessage(RSP_USER_NOT_FOUND);
+                    sendMessage(CmdRsp.RSP_USER_NOT_FOUND);
                 }
                 return;
             }
-            sendMessage(RSP_WRONG_PARAM);
+            sendMessage(CmdRsp.RSP_WRONG_PARAM);
             return;
         }
-        sendMessage(RSP_WRONG_CMD);
+        sendMessage(CmdRsp.RSP_WRONG_CMD);
     }
 
     private boolean netSend(String str) {
@@ -172,14 +152,16 @@ public class ClientHandler {
         run = false;
     }
 
+    public boolean isSubscribed() {
+        return subscribed;
+    }
+
     public User getUser() {
         return user;
     }
 
     public void sendMessage(String msg) {
-        if( !netSend(msg) ) {
-            dropClient();
-        }
+        if( !netSend(msg) ) dropClient();
     }
 
 }

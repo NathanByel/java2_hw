@@ -4,7 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowEvent;
 
-public class MainWindow extends JFrame implements ClientUI{
+public class MainWindow extends JFrame implements ClientUI {
     private JTextArea textAreaChat;
     private JTextArea textAreaUsersList;
     private JTextField textFieldSend;
@@ -18,6 +18,7 @@ public class MainWindow extends JFrame implements ClientUI{
         setTitle("Main window");
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setBounds(300, 300, 400, 400);
+        setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
         textAreaChat = new JTextArea();
@@ -51,9 +52,23 @@ public class MainWindow extends JFrame implements ClientUI{
 
     private void sendText() {
         String msg = textFieldSend.getText().trim();
+        textFieldSend.setText("");
+        String myNickName = clientController.getUser().getNickName();
+
         if(msg.length() > 0) {
-            textAreaChat.append("Я: " + msg + "\n\r");
-            textFieldSend.setText("");
+            if(msg.startsWith("/")) {
+                String[] parts = msg.split(" ", 2);
+                String toUser = parts[0].substring(1);
+                if ( (parts.length == 2) && (clientController.getUsersList().contains(toUser)) ) {
+                    clientController.sendMessage(toUser, parts[1]);
+                    textAreaChat.append("Я(" + myNickName + ")->" + toUser + ": " + parts[1] + "\n\r");
+                } else {
+                    textAreaChat.append("Пользователь не найден или не верная команда.\n\r");
+                }
+                return;
+            }
+
+            textAreaChat.append("Я(" + myNickName + "): " + msg + "\n\r");
             clientController.sendMessage(msg);
         }
     }
@@ -70,4 +85,7 @@ public class MainWindow extends JFrame implements ClientUI{
     public void addMessage(String msg) {
         textAreaChat.append(msg + "\n\r");
     }
+
+    @Override
+    public void statusCallback(String s) {}
 }

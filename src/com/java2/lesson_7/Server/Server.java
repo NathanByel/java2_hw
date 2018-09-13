@@ -1,5 +1,6 @@
 package com.java2.lesson_7.Server;
 
+import com.java2.lesson_7.CmdRsp;
 import com.java2.lesson_7.Log;
 
 import java.net.ServerSocket;
@@ -42,12 +43,16 @@ public class Server {
 
     public void subscribe(ClientHandler clientHandler) {
         clients.add(clientHandler);
+        sendBroadcastMessage(clientHandler, clientHandler.getUser().getNickName() + " зашел в чат!");
         sendUserList(null);
         Log.i(TAG, "Клиент " + clientHandler.getUser().getNickName() + " залогинился. Всего - " + clients.size());
     }
 
     public void unsubscribe(ClientHandler clientHandler) {
         clients.remove(clientHandler);
+        if(clientHandler.isSubscribed()) {
+            sendBroadcastMessage(clientHandler, clientHandler.getUser().getNickName() + " вышел из чата!");
+        }
         sendUserList(null);
         Log.i(TAG, "Клиент " + clientHandler.hashCode() + " отключен. Всего - " + clients.size());
     }
@@ -62,7 +67,9 @@ public class Server {
     }
 
     public boolean sendBroadcastMessage(ClientHandler clientHandler, String msg) {
-        Log.i(TAG, "Msg send " + ANSI_BLUE + clientHandler.getUser().getNickName() + ANSI_GREEN + " -> ALL");
+        String nickName = clientHandler.getUser().getNickName();
+        Log.i(TAG, "Msg send " + ANSI_BLUE + nickName + ANSI_GREEN + " -> ALL");
+        msg = nickName + ": " + msg;
         for(ClientHandler client: clients) {
             if(client != clientHandler) {
                 client.sendMessage(msg);
@@ -71,21 +78,23 @@ public class Server {
         return true;
     }
 
-    public boolean sendPrivateMessage(ClientHandler clientHandler, String nickName, String msg) {
-        Log.i(TAG, "Msg send " + ANSI_BLUE + clientHandler.getUser().getNickName() + ANSI_GREEN + " -> "  + ANSI_BLUE + nickName);
+    public boolean sendPrivateMessage(ClientHandler clientHandler, String toNickName, String msg) {
+        String nickName = clientHandler.getUser().getNickName();
+        Log.i(TAG, "Msg send " + ANSI_BLUE + nickName + ANSI_GREEN + " -> "  + ANSI_BLUE + toNickName);
         for(ClientHandler client: clients) {
-            if( client.getUser().getNickName().equals(nickName) ) {
-                client.sendMessage(msg);
+            if( client.getUser().getNickName().equals(toNickName) ) {
+                client.sendMessage("PM " + nickName + ": " + msg);
                 return true;
             }
         }
-        Log.i(TAG, "User " + ANSI_BLUE + nickName + ANSI_GREEN + " not found");
+        Log.e(TAG, "User " + ANSI_BLUE + nickName + ANSI_RED + " not found");
         return false;
     }
 
     public void sendUserList(ClientHandler clientHandler) {
         StringBuilder users = new StringBuilder();
-        users.append("/users_list ");
+        users.append(CmdRsp.RSP_USERS_LIST);
+        users.append(" ");
         for(ClientHandler client: clients) {
             users.append( client.getUser().getNickName());
             users.append(" ");
