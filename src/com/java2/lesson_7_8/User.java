@@ -1,4 +1,4 @@
-package com.java2.lesson_7;
+package com.java2.lesson_7_8;
 
 public class User {
     private final String nickName;

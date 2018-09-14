@@ -1,4 +1,4 @@
-package com.java2.lesson_7.Server;
+package com.java2.lesson_7_8.Server;
 
 import java.io.IOException;
 

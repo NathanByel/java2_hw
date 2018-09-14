@@ -1,7 +1,6 @@
-package com.java2.lesson_7.Client;
+package com.java2.lesson_7_8.Client;
 
-import com.java2.lesson_7.CmdRsp;
-import com.java2.lesson_7.Log;
+import com.java2.lesson_7_8.CmdRsp;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;

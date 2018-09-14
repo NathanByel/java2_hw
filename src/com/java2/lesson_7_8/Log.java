@@ -1,4 +1,4 @@
-package com.java2.lesson_7;
+package com.java2.lesson_7_8;
 
 public class Log {
     public static final String ANSI_RESET   = "\u001B[0m";

@@ -1,16 +1,18 @@
-package com.java2.lesson_7.Server;
+package com.java2.lesson_7_8.Server;
 
-import com.java2.lesson_7.CmdRsp;
-import com.java2.lesson_7.Log;
+import com.java2.lesson_7_8.CmdRsp;
+import com.java2.lesson_7_8.Log;
+import com.java2.lesson_7_8.Messages.PrivateMessage;
+import com.java2.lesson_7_8.User;
 
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.java2.lesson_7.Log.ANSI_BLUE;
-import static com.java2.lesson_7.Log.ANSI_GREEN;
-import static com.java2.lesson_7.Log.ANSI_RED;
+import static com.java2.lesson_7_8.Log.ANSI_BLUE;
+import static com.java2.lesson_7_8.Log.ANSI_GREEN;
+import static com.java2.lesson_7_8.Log.ANSI_RED;
 
 public class Server {
     private static final String TAG = "SERVER";
@@ -34,7 +36,7 @@ public class Server {
             while(true) {
                 Socket socket = serverSocket.accept();
                 ClientHandler client = new ClientHandler(this, socket);
-                Log.i(TAG, "Клиент " + client.hashCode() + " подключился. Ожидание регистрации.");
+                Log.i(TAG, "Клиент " + client.hashCode() + " подключился. Ожидание авторизации.");
             }
         } catch (Exception e) {
             Log.e(TAG, "Ошибка сервера! " + e.toString());
@@ -57,9 +59,9 @@ public class Server {
         Log.i(TAG, "Клиент " + clientHandler.hashCode() + " отключен. Всего - " + clients.size());
     }
 
-    public boolean isNickNameBusy(String nickName) {
+    public boolean isNickNameBusy(User user) {
         for (ClientHandler client : clients) {
-            if (client.getUser().getNickName().equals(nickName)) {
+            if (client.getUser().getNickName().equals( user.getNickName() )) {
                 return true;
             }
         }
@@ -78,7 +80,7 @@ public class Server {
         return true;
     }
 
-    public boolean sendPrivateMessage(ClientHandler clientHandler, String toNickName, String msg) {
+    public boolean sendPrivateMessage(ClientHandler clientHandler, PrivateMessage msg) {
         String nickName = clientHandler.getUser().getNickName();
         Log.i(TAG, "Msg send " + ANSI_BLUE + nickName + ANSI_GREEN + " -> "  + ANSI_BLUE + toNickName);
         for(ClientHandler client: clients) {

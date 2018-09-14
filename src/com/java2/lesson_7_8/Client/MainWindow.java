@@ -1,8 +1,7 @@
-package com.java2.lesson_7.Client;
+package com.java2.lesson_7_8.Client;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.WindowEvent;
 
 public class MainWindow extends JFrame implements ClientUI {
     private JTextArea textAreaChat;
