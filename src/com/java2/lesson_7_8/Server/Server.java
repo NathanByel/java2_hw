@@ -1,7 +1,8 @@
 package com.java2.lesson_7_8.Server;
 
-import com.java2.lesson_7_8.CmdRsp;
 import com.java2.lesson_7_8.Log;
+import com.java2.lesson_7_8.Messages.BroadcastMessage;
+import com.java2.lesson_7_8.Messages.Message;
 import com.java2.lesson_7_8.Messages.PrivateMessage;
 import com.java2.lesson_7_8.User;
 
@@ -12,7 +13,6 @@ import java.util.List;
 
 import static com.java2.lesson_7_8.Log.ANSI_BLUE;
 import static com.java2.lesson_7_8.Log.ANSI_GREEN;
-import static com.java2.lesson_7_8.Log.ANSI_RED;
 
 public class Server {
     private static final String TAG = "SERVER";
@@ -35,8 +35,8 @@ public class Server {
 
             while(true) {
                 Socket socket = serverSocket.accept();
+                Log.i(TAG, "Сокет " + socket.hashCode() + " подключен. Ожидание авторизации.");
                 ClientHandler client = new ClientHandler(this, socket);
-                Log.i(TAG, "Клиент " + client.hashCode() + " подключился. Ожидание авторизации.");
             }
         } catch (Exception e) {
             Log.e(TAG, "Ошибка сервера! " + e.toString());
@@ -45,16 +45,17 @@ public class Server {
 
     public void subscribe(ClientHandler clientHandler) {
         clients.add(clientHandler);
-        sendBroadcastMessage(clientHandler, clientHandler.getUser().getNickName() + " зашел в чат!");
+
+        sendBroadcastMessage(clientHandler, new BroadcastMessage(clientHandler.getUser().getNickName(),
+                                                            clientHandler.getUser().getNickName() + " зашел в чат!") );
         sendUserList(null);
         Log.i(TAG, "Клиент " + clientHandler.getUser().getNickName() + " залогинился. Всего - " + clients.size());
     }
 
     public void unsubscribe(ClientHandler clientHandler) {
         clients.remove(clientHandler);
-        if(clientHandler.isSubscribed()) {
-            sendBroadcastMessage(clientHandler, clientHandler.getUser().getNickName() + " вышел из чата!");
-        }
+        sendBroadcastMessage(clientHandler, new BroadcastMessage(clientHandler.getUser().getNickName(),
+                                                            clientHandler.getUser().getNickName() + " вышел из чата!") );
         sendUserList(null);
         Log.i(TAG, "Клиент " + clientHandler.hashCode() + " отключен. Всего - " + clients.size());
     }
@@ -68,20 +69,20 @@ public class Server {
         return false;
     }
 
-    public boolean sendBroadcastMessage(ClientHandler clientHandler, String msg) {
-        String nickName = clientHandler.getUser().getNickName();
+    public boolean sendBroadcastMessage(ClientHandler fromClient, Message msg) {
+        String nickName = fromClient.getUser().getNickName();
         Log.i(TAG, "Msg send " + ANSI_BLUE + nickName + ANSI_GREEN + " -> ALL");
-        msg = nickName + ": " + msg;
-        for(ClientHandler client: clients) {
-            if(client != clientHandler) {
-                client.sendMessage(msg);
+
+        for(ClientHandler toClient: clients) {
+            if(toClient != fromClient) {
+                toClient.sendMessage(msg);
             }
         }
         return true;
     }
 
     public boolean sendPrivateMessage(ClientHandler clientHandler, PrivateMessage msg) {
-        String nickName = clientHandler.getUser().getNickName();
+        /*String nickName = clientHandler.getUser().getNickName();
         Log.i(TAG, "Msg send " + ANSI_BLUE + nickName + ANSI_GREEN + " -> "  + ANSI_BLUE + toNickName);
         for(ClientHandler client: clients) {
             if( client.getUser().getNickName().equals(toNickName) ) {
@@ -89,12 +90,12 @@ public class Server {
                 return true;
             }
         }
-        Log.e(TAG, "User " + ANSI_BLUE + nickName + ANSI_RED + " not found");
+        Log.e(TAG, "User " + ANSI_BLUE + nickName + ANSI_RED + " not found");*/
         return false;
     }
 
     public void sendUserList(ClientHandler clientHandler) {
-        StringBuilder users = new StringBuilder();
+       /* StringBuilder users = new StringBuilder();
         users.append(CmdRsp.RSP_USERS_LIST);
         users.append(" ");
         for(ClientHandler client: clients) {
@@ -108,7 +109,7 @@ public class Server {
             for(ClientHandler client: clients) {
                 client.sendMessage(users.toString());
             }
-        }
+        }*/
     }
 
     public AuthService getAuthService() {

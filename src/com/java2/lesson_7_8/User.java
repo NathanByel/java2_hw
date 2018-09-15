@@ -16,4 +16,14 @@ public class User {
     public String getPass() {
         return pass;
     }
+
+    /*
+    public void setNickName(String nickName) {
+        this.nickName = nickName;
+    }
+
+    public void setPass(String pass) {
+        this.pass = pass;
+    }
+    */
 }

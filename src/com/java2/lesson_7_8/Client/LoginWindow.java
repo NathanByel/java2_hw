@@ -99,7 +99,7 @@ public class LoginWindow extends JFrame implements ClientUI {
     }
 
     @Override
-    public void statusCallback(String s) {
+    public void statusCallback(CmdRsp s) {
         if(s.equals(CmdRsp.RSP_OK_AUTH)) {
             //JOptionPane.showMessageDialog(null,"Вы успешно вошли!");
             this.dispose();

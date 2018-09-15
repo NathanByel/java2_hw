@@ -1,26 +1,13 @@
 package com.java2.lesson_7_8.Messages;
 
-public enum  MessageType {
+public enum MessageType {
     BROADCAST_MESSAGE,
     PRIVATE_MESSAGE,
     INFO_MESSAGE,
 
     ALIVE_MESSAGE,
-    END_CMD,
-    AUTH_MESSAGE,
-    GET_USERS_LIST_CMD,
-
-
+    COMMAND_MESSAGE,
     RESPONSE_MESSAGE,
 
-    RSP_OK,
-    RSP_ERR,
-    RSP_WRONG_CMD,
-    RSP_WRONG_PARAM,
-    RSP_NEED_AUTH,
-    RSP_OK_AUTH,
-    RSP_WRONG_AUTH,
-    RSP_NICK_BUSY,
-    RSP_USER_NOT_FOUND,
-    RSP_USERS_LIST,
+    AUTH_MESSAGE
 }

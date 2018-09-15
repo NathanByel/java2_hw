@@ -7,6 +7,7 @@ import com.java2.lesson_7_8.Messages.*;
 import com.java2.lesson_7_8.User;
 import com.java2.lesson_7_8.UserInfo;
 
+import java.io.IOException;
 import java.net.Socket;
 
 public class ClientHandler {
@@ -28,7 +29,13 @@ public class ClientHandler {
     public ClientHandler(Server server, Socket socket) {
         this.server = server;
 
-        net = new NetDataChannel(socket);
+        try {
+            net = new NetDataChannel(socket);
+        } catch (IOException e) {
+            e.printStackTrace();
+
+            return;
+        }
 
         authStartTime = System.currentTimeMillis();
         new Thread(() -> {
@@ -66,7 +73,7 @@ public class ClientHandler {
             while(run) {
                 Message msg = net.getMessage();
                 if(msg != null) {
-                    parseMessage(msg);
+                    parseFromMessage(msg);
                 } else {
                     dropClient();
                 }
@@ -105,7 +112,10 @@ public class ClientHandler {
         return CmdRsp.RSP_OK;
     }
 
-    private void parseMessage(Message msg) {
+    /*
+    * Обработка сообщений от клиента
+    */
+    private void parseFromMessage(Message msg) {
         switch (msg.getType()) {
             case ALIVE_MESSAGE:
                 clientLastAliveTime = System.currentTimeMillis();
@@ -120,7 +130,7 @@ public class ClientHandler {
                 }
                 break;
 
-            case PRIVATE_MESSAGE:
+            /*case PRIVATE_MESSAGE:
                 String[] cmdParts = cmd.split(" ", 3);
                 if(cmdParts.length == 3) {
                     if( server.sendPrivateMessage(this, cmdParts[1], cmdParts[2]) ) {
@@ -131,42 +141,22 @@ public class ClientHandler {
                     return;
                 }
                 net.sendMessage(new ResponseMessage(CmdRsp.RSP_WRONG_PARAM));
-                break;
+                break;*/
 
             case INFO_MESSAGE:
                 break;
 
-            case END_CMD:
+            //case END_CMD:
                 //Log.i(TAG, "Клиент " + user.getNickName() + " конец сессии.");
                 //dropClient();
-                break;
+            //    break;
             case AUTH_MESSAGE:
                 break;
-            case GET_USERS_LIST_CMD:
+            //case GET_USERS_LIST_CMD:
                 //else if(cmd.equals(CmdRsp.CMD_GET_USERS)) {
                 //server.sendUserList(this);
-                break;
+            //    break;
             case RESPONSE_MESSAGE:
-                break;
-            case RSP_OK:
-                break;
-            case RSP_ERR:
-                break;
-            case RSP_WRONG_CMD:
-                break;
-            case RSP_WRONG_PARAM:
-                break;
-            case RSP_NEED_AUTH:
-                break;
-            case RSP_OK_AUTH:
-                break;
-            case RSP_WRONG_AUTH:
-                break;
-            case RSP_NICK_BUSY:
-                break;
-            case RSP_USER_NOT_FOUND:
-                break;
-            case RSP_USERS_LIST:
                 break;
 
             default:
@@ -175,8 +165,10 @@ public class ClientHandler {
     }
 
     private void dropClient() {
-        Log.i(TAG, "drop client");
-        server.unsubscribe(this);
+        Log.i(TAG, "Drop client");
+        if(subscribed) {
+            server.unsubscribe(this);
+        }
         net.close();
         run = false;
     }
@@ -187,5 +179,9 @@ public class ClientHandler {
 
     public User getUser() {
         return userInfo;
+    }
+
+    public void sendMessage(Message msg) {
+        net.sendMessage(msg);
     }
 }

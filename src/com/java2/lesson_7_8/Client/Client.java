@@ -1,17 +1,20 @@
 package com.java2.lesson_7_8.Client;
 
+import com.java2.lesson_7_8.Channel.NetDataChannel;
 import com.java2.lesson_7_8.CmdRsp;
+import com.java2.lesson_7_8.Log;
+import com.java2.lesson_7_8.Messages.AuthMessage;
+import com.java2.lesson_7_8.Messages.BroadcastMessage;
+import com.java2.lesson_7_8.Messages.Message;
+import com.java2.lesson_7_8.Messages.ResponseMessage;
 import com.java2.lesson_7_8.User;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 
 public class Client implements ClientController {
+    private static final String TAG = "CLIENT";
     private final int CONNECT_TRY = 3;
     private final String SERVER_ADDR = "localhost";
     private final int SERVER_PORT = 8189;
@@ -19,10 +22,8 @@ public class Client implements ClientController {
     private boolean subscribed = false;
     private int connectTry = 0;
 
+    private NetDataChannel net;
     private User user;
-    private Socket socket;
-    private Scanner netIn;
-    private PrintWriter netOut;
 
     private ClientUI clientUI;
     private ClientUI logInUI;
@@ -43,12 +44,12 @@ public class Client implements ClientController {
     private void connectThreadStart() {
         new Thread(() -> {
             while(connectTry < CONNECT_TRY) {
-                if (connected) {
+                if (connected && subscribed) {
                     connectTry = 0;
                     //netSend("<ping>");
-                    if(!subscribed) {
-                        netSend(CmdRsp.CMD_AUTH + " " + user.getNickName() + " " + user.getPass());
-                    }
+                    //if(!subscribed) {
+                    //    netSend(CmdRsp.CMD_AUTH + " " + user.getNickName() + " " + user.getPass());
+                   // }
                 } else {
                     connectToServer();
                     connectTry++;
@@ -70,13 +71,14 @@ public class Client implements ClientController {
             receiverThread = new Thread(() -> {
                 while (true) {
                     if (connected) {
-                        String netData = netReceive();
-                        if (netData != null) {
-                            if (!netData.startsWith("/") || !parseCmd(netData)) {
-                                clientUI.addMessage(netData);
-                            }
+                        Message msg = net.getMessage();
+                        if (msg != null) {
+                            parseMessage(msg);
                         } else {
-                            System.out.println("Ошибка сети!");
+                            Log.e(TAG, "getMessage error. Ошибка сети!");
+                            net.close();
+                            connected = false;
+                            subscribed = false;
                         }
                     } else {
                         try {
@@ -91,89 +93,102 @@ public class Client implements ClientController {
         }
     }
 
-    private boolean netSend(String str) {
-        try {
-            netOut.println(str);
-            netOut.flush();
-            return true;
-        } catch (Exception e) {
-            subscribed = false;
-            connected = false;
-            return false;
-        }
-    }
-
-    private String netReceive() {
-        try {
-            return netIn.nextLine();
-        } catch (Exception e) {
-            subscribed = false;
-            connected = false;
-            return null;
-        }
-    }
-
     private void connectToServer() {
-        closeAllResources();
-        try {
-            System.out.printf("Попытка подключения к серверу - %s:%d...", SERVER_ADDR, SERVER_PORT);
-            socket = new Socket(SERVER_ADDR, SERVER_PORT);
-            netIn = new Scanner(socket.getInputStream());
-            netOut = new PrintWriter(socket.getOutputStream());
+        if(net != null) {
+            net.close();
+        }
 
-            System.out.println("Подключено!");
-            netSend(CmdRsp.CMD_AUTH + " " + user.getNickName() + " " + user.getPass());
+        Log.i(TAG, "Попытка подключения к серверу - " + SERVER_ADDR + ":" + SERVER_PORT);
+        try {
+            net = new NetDataChannel(SERVER_ADDR, SERVER_PORT);
+            Log.i(TAG, "Подключено!");
+            net.sendMessage(new AuthMessage(user));
             connected = true;
         } catch (IOException e) {
-            System.out.println("Ошибка сети...");
+            Log.e(TAG,"Ошибка сети..." + e.toString());
             subscribed = false;
             connected = false;
-            closeAllResources();
         }
     }
 
-    private void closeAllResources() {
-        try {
-            socket.close();
-        } catch (Exception e) {
-            socket = null;
+    private void parseMessage(Message msg) {
+        switch (msg.getType()) {
+
+            case BROADCAST_MESSAGE:
+                clientUI.addMessage(msg.toString());
+                break;
+            case PRIVATE_MESSAGE:
+                clientUI.addMessage(msg.toString());
+                break;
+            case INFO_MESSAGE:
+                break;
+            case ALIVE_MESSAGE:
+                break;
+            case COMMAND_MESSAGE:
+                break;
+            case RESPONSE_MESSAGE:
+                parseResponse((ResponseMessage) msg);
+                break;
+            case AUTH_MESSAGE:
+                break;
+
+            default:
+                Log.e(TAG, "Wrong message type");
         }
-        if(netIn != null) netIn.close();
-        if(netOut != null) netOut.close();
     }
 
-    private boolean parseCmd(String cmd) {
+    private void parseResponse(ResponseMessage msg) {
+        switch (msg.getRsp()) {
 
-        if(cmd.equals(CmdRsp.RSP_OK)) {
-            return true;
-        } else if (cmd.equals(CmdRsp.RSP_OK_AUTH)
-                || cmd.equals(CmdRsp.RSP_WRONG_AUTH)
-                || cmd.equals(CmdRsp.RSP_NICK_BUSY)) {
-
-            if (cmd.equals(CmdRsp.RSP_OK_AUTH)) {
+            case CMD_ALIVE:
+                break;
+            case CMD_END:
+                break;
+            case CMD_AUTH:
+                break;
+            case CMD_TO_USER:
+                break;
+            case CMD_GET_USERS:
+                break;
+            case RSP_OK:
+                break;
+            case RSP_ERR:
+                break;
+            case RSP_WRONG_CMD:
+                break;
+            case RSP_WRONG_PARAM:
+                break;
+            case RSP_NEED_AUTH:
+                break;
+            case RSP_OK_AUTH:
                 subscribed = true;
                 if (clientUI == null) {
                     clientUI = new MainWindow(this);
                 }
-            } else {
+                break;
+            case RSP_WRONG_AUTH:
+            case RSP_NICK_BUSY:
+            case RSP_USER_NOT_FOUND:
                 subscribed = false;
                 connectTry = CONNECT_TRY;
-            }
+                logInUI.statusCallback(msg.getRsp());
+                break;
 
-            logInUI.statusCallback(cmd);
-            return true;
-        } else if(cmd.startsWith(CmdRsp.RSP_USERS_LIST)) {
-            // ПЕРЕДЕЛАТЬ
-            usersList.clear();
-            usersList.addAll(Arrays.asList( cmd.split(" ") ));
-            usersList.remove(0);// (CmdRsp.RSP_USERS_LIST);
+            case RSP_USERS_LIST:
+                // ПЕРЕДЕЛАТЬ
+                /*usersList.clear();
+                usersList.addAll(Arrays.asList(cmd.split(" ")));
+                usersList.remove(0);// (CmdRsp.RSP_USERS_LIST);
 
-            if(clientUI != null) {
-                clientUI.setUsersList( usersList.toArray(new String[0]));
-            }
-            return true;
+                if (clientUI != null) {
+                    clientUI.setUsersList(usersList.toArray(new String[0]));
+                }*/
+                break;
+
+            default:
+                Log.e(TAG, "Wrong response type");
         }
-        return false;
+
     }
 
     @Override
@@ -200,19 +215,19 @@ public class Client implements ClientController {
     }
 
     @Override
-    public void sendMessage(String msg) {
+    public void sendTextMessage(String msg) {
         if (connected && subscribed) {
-            if( !netSend(msg) ) {
-                System.out.println("Ошибка сети!");
+            if( !net.sendMessage(new BroadcastMessage(user.getNickName(), msg)) ) {
+                Log.e(TAG, "sendMessage Ошибка сети!");
             }
         } else {
             clientUI.addMessage("Нет подключения к серверу!");
-            System.out.println("Нет подключения к серверу!");
+            Log.e(TAG, "Нет подключения к серверу!");
         }
     }
 
     @Override
-    public void sendMessage(String toUser, String msg) {
-        sendMessage(CmdRsp.CMD_TO_USER + " " + toUser + " " + msg);
+    public void sendTextMessage(String toUser, String msg) {
+        sendTextMessage(CmdRsp.CMD_TO_USER + " " + toUser + " " + msg);
     }
 }

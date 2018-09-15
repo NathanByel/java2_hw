@@ -1,5 +1,7 @@
 package com.java2.lesson_7_8.Client;
 
+import com.java2.lesson_7_8.CmdRsp;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -59,7 +61,7 @@ public class MainWindow extends JFrame implements ClientUI {
                 String[] parts = msg.split(" ", 2);
                 String toUser = parts[0].substring(1);
                 if ( (parts.length == 2) && (clientController.getUsersList().contains(toUser)) ) {
-                    clientController.sendMessage(toUser, parts[1]);
+                    clientController.sendTextMessage(toUser, parts[1]);
                     textAreaChat.append("Я(" + myNickName + ")->" + toUser + ": " + parts[1] + "\n\r");
                 } else {
                     textAreaChat.append("Пользователь не найден или не верная команда.\n\r");
@@ -68,7 +70,7 @@ public class MainWindow extends JFrame implements ClientUI {
             }
 
             textAreaChat.append("Я(" + myNickName + "): " + msg + "\n\r");
-            clientController.sendMessage(msg);
+            clientController.sendTextMessage(msg);
         }
     }
 
@@ -86,5 +88,5 @@ public class MainWindow extends JFrame implements ClientUI {
     }
 
     @Override
-    public void statusCallback(String s) {}
+    public void statusCallback(CmdRsp s) {}
 }

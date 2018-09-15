@@ -2,9 +2,15 @@ package com.java2.lesson_7_8.Messages;
 
 import com.java2.lesson_7_8.User;
 
+import java.util.UUID;
+
 public class AuthMessage extends Message {
     public AuthMessage(User user) {
         super(MessageType.AUTH_MESSAGE, user);
+    }
+
+    public AuthMessage() {
+        this(null);
     }
 
     public User getUser() {
@@ -14,16 +20,22 @@ public class AuthMessage extends Message {
         return null;
     }
 
-    /*
-    if( (user == null) || !netData.startsWith(CmdRsp.CMD_AUTH) ) return CmdRsp.RSP_WRONG_CMD;
+    @Override
+    public String serialize() {
+        if(getUser() != null) {
+            return super.uuid + ":" + type + ":" + getUser().getNickName() + ":" + getUser().getPass();
+        }
+        return null;
+    }
 
+    @Override
+    public boolean deserialize(String data) {
+        String[] fields = data.split(":");
+        if (fields.length != 4) return false;
+        if ( MessageType.valueOf(fields[1]) != MessageType.AUTH_MESSAGE ) return false;
 
-
-    String[] cmdParts = netData.split(" ", 3);
-        if( cmdParts.length != 3 ) return CmdRsp.RSP_WRONG_PARAM;
-        if( server.isNickNameBusy(cmdParts[1]) ) return CmdRsp.RSP_NICK_BUSY;
-        if ( !server.getAuthService().checkUser(cmdParts[1], cmdParts[2]) ) return CmdRsp.RSP_WRONG_AUTH;
-
-    user = new User(cmdParts[1], cmdParts[2]);
-        return CmdRsp.RSP_OK;*/
+        super.uuid = UUID.fromString(fields[0]);
+        super.data = new User(fields[2], fields[3]);
+        return true;
+    }
 }

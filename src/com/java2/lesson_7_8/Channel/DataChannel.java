@@ -6,6 +6,6 @@ import java.io.Closeable;
 
 public interface DataChannel extends Closeable {
     void open();
-    void sendMessage(Message msg);
+    boolean sendMessage(Message msg);
     Message getMessage();
 }
