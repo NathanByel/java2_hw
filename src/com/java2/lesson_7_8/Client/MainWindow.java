@@ -60,7 +60,7 @@ public class MainWindow extends JFrame implements ClientUI {
             if(msg.startsWith("/")) {
                 String[] parts = msg.split(" ", 2);
                 String toUser = parts[0].substring(1);
-                if ( (parts.length == 2) && (clientController.getUsersList().contains(toUser)) ) {
+                if ( (parts.length == 2) /*&& (clientController.getUsersList().contains(toUser))*/ ) {
                     clientController.sendTextMessage(toUser, parts[1]);
                     textAreaChat.append("Я(" + myNickName + ")->" + toUser + ": " + parts[1] + "\n\r");
                 } else {

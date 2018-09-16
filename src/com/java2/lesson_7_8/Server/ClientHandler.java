@@ -12,7 +12,7 @@ import java.net.Socket;
 
 public class ClientHandler {
     private static final String TAG = "CLIENT HANDLER";
-
+    private static final int AUTH_TIMEOUT = 120000;
     private UserInfo userInfo;
     private Server server;
 
@@ -55,7 +55,7 @@ public class ClientHandler {
                     } else {
                         Log.e(TAG, "Клиент " + this.hashCode() + " " + cmdRsp + " Необходима регистрация.");
                         net.sendMessage( new ResponseMessage(cmdRsp) );
-                        net.sendMessage( new ResponseMessage(CmdRsp.RSP_NEED_AUTH) );
+                        //net.sendMessage( new ResponseMessage(CmdRsp.RSP_NEED_AUTH) );
                         //dropClient();
                         //return;
                     }
@@ -66,9 +66,12 @@ public class ClientHandler {
             server.subscribe(this);
             subscribed = true;
 
-            net.sendMessage( new InfoMessage("Добро пожаловать!\r\n" +
+            /*net.sendMessage( new InfoMessage("Добро пожаловать!\r\n" +
                     "Для отправки личных сообщений используйте формат:\r\n" +
-                    "/имя сообщение\r\n") );
+                    "/имя сообщение\r\n") );*/
+            net.sendMessage( new InfoMessage("Добро пожаловать!") );
+            net.sendMessage( new InfoMessage("Для отправки личных сообщений используйте формат:") );
+            net.sendMessage( new InfoMessage("/имя сообщение") );
 
             while(run) {
                 Message msg = net.getMessage();
@@ -85,7 +88,8 @@ public class ClientHandler {
                 long time = System.currentTimeMillis();
 
                 if(!authorised) {
-                    if( (time - authStartTime) > 12000) {
+                    if( (time - authStartTime) > AUTH_TIMEOUT) {
+                        net.sendMessage( new ResponseMessage(CmdRsp.RSP_AUTH_TIMEOUT));
                         Log.e(TAG, "Клиент " + this.hashCode() + " отключен. Таймаут авторизации.");
                         dropClient();
                         break;
@@ -130,35 +134,21 @@ public class ClientHandler {
                 }
                 break;
 
-            /*case PRIVATE_MESSAGE:
-                String[] cmdParts = cmd.split(" ", 3);
-                if(cmdParts.length == 3) {
-                    if( server.sendPrivateMessage(this, cmdParts[1], cmdParts[2]) ) {
-                        net.sendMessage(new ResponseMessage(CmdRsp.RSP_OK));
-                    } else {
-                        net.sendMessage(new ResponseMessage(CmdRsp.RSP_USER_NOT_FOUND));
-                    }
-                    return;
+            case PRIVATE_MESSAGE:
+                if(server.sendPrivateMessage(this, (PrivateMessage) msg)) {
+                    net.sendMessage(new ResponseMessage(CmdRsp.RSP_OK));
+                } else {
+                    net.sendMessage(new ResponseMessage(CmdRsp.RSP_USER_NOT_FOUND));
                 }
-                net.sendMessage(new ResponseMessage(CmdRsp.RSP_WRONG_PARAM));
-                break;*/
-
-            case INFO_MESSAGE:
                 break;
+
+            //case INFO_MESSAGE:
+            //    break;
 
             //case END_CMD:
                 //Log.i(TAG, "Клиент " + user.getNickName() + " конец сессии.");
                 //dropClient();
             //    break;
-            case AUTH_MESSAGE:
-                break;
-            //case GET_USERS_LIST_CMD:
-                //else if(cmd.equals(CmdRsp.CMD_GET_USERS)) {
-                //server.sendUserList(this);
-            //    break;
-            case RESPONSE_MESSAGE:
-                break;
-
             default:
                 net.sendMessage(new ResponseMessage(CmdRsp.RSP_WRONG_CMD));
         }

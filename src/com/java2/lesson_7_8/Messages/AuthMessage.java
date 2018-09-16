@@ -30,7 +30,7 @@ public class AuthMessage extends Message {
 
     @Override
     public boolean deserialize(String data) {
-        String[] fields = data.split(":");
+        String[] fields = data.split(":", 4);
         if (fields.length != 4) return false;
         if ( MessageType.valueOf(fields[1]) != MessageType.AUTH_MESSAGE ) return false;
 

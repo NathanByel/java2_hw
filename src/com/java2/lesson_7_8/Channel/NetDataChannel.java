@@ -1,9 +1,7 @@
 package com.java2.lesson_7_8.Channel;
 
 import com.java2.lesson_7_8.Log;
-import com.java2.lesson_7_8.Messages.AuthMessage;
-import com.java2.lesson_7_8.Messages.Message;
-import com.java2.lesson_7_8.Messages.MessageType;
+import com.java2.lesson_7_8.Messages.*;
 import com.java2.lesson_7_8.User;
 
 import java.io.IOException;
@@ -77,33 +75,25 @@ public class NetDataChannel implements DataChannel {
             return null;
         }
 
+        Message msg;
         switch( MessageType.valueOf(fields[1]) ) {
-            case BROADCAST_MESSAGE:
-                break;
-            case PRIVATE_MESSAGE:
-                break;
-            case INFO_MESSAGE:
-                break;
-            case ALIVE_MESSAGE:
-                break;
-            case COMMAND_MESSAGE:
-                break;
-            case RESPONSE_MESSAGE:
-                break;
-
-            case AUTH_MESSAGE:
-                AuthMessage msg = new AuthMessage();
-                if( msg.deserialize(data) ) {
-                    return msg;
-                }
-                break;
-
+            case BROADCAST_MESSAGE:     msg = new BroadcastMessage();   break;
+            case PRIVATE_MESSAGE:       msg = new PrivateMessage();     break;
+            case INFO_MESSAGE:          msg = new InfoMessage();        break;
+//            case ALIVE_MESSAGE: break;
+//            case COMMAND_MESSAGE: break;
+            case RESPONSE_MESSAGE:      msg = new ResponseMessage();    break;
+            case AUTH_MESSAGE:          msg = new AuthMessage();        break;
+            case USERS_LIST_MESSAGE:    msg = new UsersListMessage();   break;
             default:
                 Log.e(TAG, "Wrong type. MSG " + data);
                 return null;
         }
 
-        Log.e(TAG, "Failed to deserialize. Wrong type. MSG " + data);
+        if( msg.deserialize(data) ) {
+            return msg;
+        }
+        Log.e(TAG, "Failed to deserialize. MSG " + data);
         return null;
     }
 
@@ -133,15 +123,23 @@ public class NetDataChannel implements DataChannel {
     }
 
     private void closeAll() {
-        if(netIn != null) netIn.close();
-        if(netOut != null) netOut.close();
-
         if(socket != null) {
             try {
                 socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+
+        // Почему-то если побовать в начале закрыть это, а не сокет,
+        // то дальше программа не идет, как будто выходит из функции...
+        // Необходимо разобраться.
+        if(netIn != null) {
+            netIn.close();
+        }
+
+        if(netOut != null) {
+            netOut.close();
         }
     }
 }

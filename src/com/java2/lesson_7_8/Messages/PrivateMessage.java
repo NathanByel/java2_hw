@@ -1,26 +1,51 @@
 package com.java2.lesson_7_8.Messages;
 
-import com.java2.lesson_7_8.User;
+import java.util.UUID;
 
 public class PrivateMessage extends Message {
-    private User toUser;
+    private String to;
     private String from;
-    public PrivateMessage(String from, User toUser, String msg) {
-        super(MessageType.PRIVATE_MESSAGE, msg);
+
+    public PrivateMessage(String from, String to, String text) {
+        super(MessageType.PRIVATE_MESSAGE, text);
         this.from = from;
+        this.to = to;
     }
 
-    public User getToUser() {
-        return toUser;
+    public PrivateMessage() {
+        this(null, null, null);
+    }
+
+    public String getTo() {
+        return to;
+    }
+
+    public String getFrom() {
+        return from;
+    }
+
+    public String getText() {
+        return (String) super.data;
     }
 
     @Override
     public String serialize() {
-        return "PM " + " " + from + ": " + super.data.toString();
+        if( (from != null) && (to != null) && (getText() != null) ) {
+            return super.uuid + ":" + type + ":" + from + ":" + to + ":" + getText();
+        }
+        return null;
     }
 
     @Override
     public boolean deserialize(String data) {
-        return false;
+        String[] fields = data.split(":", 5);
+        if (fields.length != 5) return false;
+        if ( MessageType.valueOf(fields[1]) != MessageType.PRIVATE_MESSAGE ) return false;
+
+        super.uuid = UUID.fromString(fields[0]);
+        from = fields[2];
+        to = fields[3];
+        super.data = fields[4];
+        return true;
     }
 }

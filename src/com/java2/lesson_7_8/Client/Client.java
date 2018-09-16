@@ -3,10 +3,7 @@ package com.java2.lesson_7_8.Client;
 import com.java2.lesson_7_8.Channel.NetDataChannel;
 import com.java2.lesson_7_8.CmdRsp;
 import com.java2.lesson_7_8.Log;
-import com.java2.lesson_7_8.Messages.AuthMessage;
-import com.java2.lesson_7_8.Messages.BroadcastMessage;
-import com.java2.lesson_7_8.Messages.Message;
-import com.java2.lesson_7_8.Messages.ResponseMessage;
+import com.java2.lesson_7_8.Messages.*;
 import com.java2.lesson_7_8.User;
 
 import java.io.IOException;
@@ -44,8 +41,11 @@ public class Client implements ClientController {
     private void connectThreadStart() {
         new Thread(() -> {
             while(connectTry < CONNECT_TRY) {
-                if (connected && subscribed) {
-                    connectTry = 0;
+                if (connected) {
+
+                    if(subscribed) {
+                        connectTry = 0;
+                    }
                     //netSend("<ping>");
                     //if(!subscribed) {
                     //    netSend(CmdRsp.CMD_AUTH + " " + user.getNickName() + " " + user.getPass());
@@ -102,7 +102,7 @@ public class Client implements ClientController {
         try {
             net = new NetDataChannel(SERVER_ADDR, SERVER_PORT);
             Log.i(TAG, "Подключено!");
-            net.sendMessage(new AuthMessage(user));
+            //net.sendMessage(new AuthMessage(user));
             connected = true;
         } catch (IOException e) {
             Log.e(TAG,"Ошибка сети..." + e.toString());
@@ -113,23 +113,28 @@ public class Client implements ClientController {
 
     private void parseMessage(Message msg) {
         switch (msg.getType()) {
-
             case BROADCAST_MESSAGE:
-                clientUI.addMessage(msg.toString());
+                BroadcastMessage m = (BroadcastMessage) msg;
+                clientUI.addMessage(m.getFrom() + ": " + m.getText());
                 break;
+
             case PRIVATE_MESSAGE:
-                clientUI.addMessage(msg.toString());
+                PrivateMessage p = (PrivateMessage) msg;
+                clientUI.addMessage("(PM)" + p.getFrom() + ": " + p.getText());
                 break;
+
+            case USERS_LIST_MESSAGE:
+                UsersListMessage u = (UsersListMessage) msg;
+                clientUI.setUsersList(u.getUsers());
+                break;
+
             case INFO_MESSAGE:
+                InfoMessage i = (InfoMessage) msg;
+                clientUI.addMessage("Info: " + i.getText());
                 break;
-            case ALIVE_MESSAGE:
-                break;
-            case COMMAND_MESSAGE:
-                break;
+
             case RESPONSE_MESSAGE:
                 parseResponse((ResponseMessage) msg);
-                break;
-            case AUTH_MESSAGE:
                 break;
 
             default:
@@ -139,42 +144,27 @@ public class Client implements ClientController {
 
     private void parseResponse(ResponseMessage msg) {
         switch (msg.getRsp()) {
-
-            case CMD_ALIVE:
-                break;
-            case CMD_END:
-                break;
-            case CMD_AUTH:
-                break;
-            case CMD_TO_USER:
-                break;
-            case CMD_GET_USERS:
-                break;
-            case RSP_OK:
-                break;
-            case RSP_ERR:
-                break;
-            case RSP_WRONG_CMD:
-                break;
-            case RSP_WRONG_PARAM:
-                break;
-            case RSP_NEED_AUTH:
-                break;
             case RSP_OK_AUTH:
                 subscribed = true;
+                logInUI.statusCallback(msg.getRsp());
                 if (clientUI == null) {
                     clientUI = new MainWindow(this);
                 }
                 break;
+
             case RSP_WRONG_AUTH:
             case RSP_NICK_BUSY:
-            case RSP_USER_NOT_FOUND:
+            case RSP_AUTH_TIMEOUT:
                 subscribed = false;
                 connectTry = CONNECT_TRY;
                 logInUI.statusCallback(msg.getRsp());
                 break;
 
-            case RSP_USERS_LIST:
+            case RSP_USER_NOT_FOUND:
+                clientUI.addMessage("Пользователь не найден.\n\r");
+                break;
+
+            //case RSP_USERS_LIST:
                 // ПЕРЕДЕЛАТЬ
                 /*usersList.clear();
                 usersList.addAll(Arrays.asList(cmd.split(" ")));
@@ -183,7 +173,7 @@ public class Client implements ClientController {
                 if (clientUI != null) {
                     clientUI.setUsersList(usersList.toArray(new String[0]));
                 }*/
-                break;
+                //break;
 
             default:
                 Log.e(TAG, "Wrong response type");
@@ -216,18 +206,22 @@ public class Client implements ClientController {
 
     @Override
     public void sendTextMessage(String msg) {
+        sendMessage(new BroadcastMessage(user.getNickName(), msg));
+    }
+
+    @Override
+    public void sendTextMessage(String toUser, String msg) {
+        sendMessage(new PrivateMessage(user.getNickName(), toUser, msg));
+    }
+
+    private void sendMessage(Message msg) {
         if (connected && subscribed) {
-            if( !net.sendMessage(new BroadcastMessage(user.getNickName(), msg)) ) {
+            if( !net.sendMessage(msg) ) {
                 Log.e(TAG, "sendMessage Ошибка сети!");
             }
         } else {
             clientUI.addMessage("Нет подключения к серверу!");
             Log.e(TAG, "Нет подключения к серверу!");
         }
-    }
-
-    @Override
-    public void sendTextMessage(String toUser, String msg) {
-        sendTextMessage(CmdRsp.CMD_TO_USER + " " + toUser + " " + msg);
     }
 }

@@ -6,12 +6,7 @@ public abstract class Message {
     protected UUID uuid;
     protected MessageType type;
     protected Object data;
-/*
-    public Message(int id, MessageType type, Object data) {
-        this.type = type;
-        this.data = data;
-    }
-*/
+
     public Message(MessageType type, Object data) {
         this.uuid = UUID.randomUUID();
         this.type = type;

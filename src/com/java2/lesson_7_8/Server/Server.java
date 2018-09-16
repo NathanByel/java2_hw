@@ -1,9 +1,8 @@
 package com.java2.lesson_7_8.Server;
 
+import com.java2.lesson_7_8.CmdRsp;
 import com.java2.lesson_7_8.Log;
-import com.java2.lesson_7_8.Messages.BroadcastMessage;
-import com.java2.lesson_7_8.Messages.Message;
-import com.java2.lesson_7_8.Messages.PrivateMessage;
+import com.java2.lesson_7_8.Messages.*;
 import com.java2.lesson_7_8.User;
 
 import java.net.ServerSocket;
@@ -13,6 +12,7 @@ import java.util.List;
 
 import static com.java2.lesson_7_8.Log.ANSI_BLUE;
 import static com.java2.lesson_7_8.Log.ANSI_GREEN;
+import static com.java2.lesson_7_8.Log.ANSI_RED;
 
 public class Server {
     private static final String TAG = "SERVER";
@@ -82,34 +82,31 @@ public class Server {
     }
 
     public boolean sendPrivateMessage(ClientHandler clientHandler, PrivateMessage msg) {
-        /*String nickName = clientHandler.getUser().getNickName();
-        Log.i(TAG, "Msg send " + ANSI_BLUE + nickName + ANSI_GREEN + " -> "  + ANSI_BLUE + toNickName);
+        //String nickName = clientHandler.getUser().getNickName();
+        Log.i(TAG, "Msg send " + ANSI_BLUE + msg.getFrom() + ANSI_GREEN + " -> "  + ANSI_BLUE + msg.getTo());
         for(ClientHandler client: clients) {
-            if( client.getUser().getNickName().equals(toNickName) ) {
-                client.sendMessage("PM " + nickName + ": " + msg);
+            if( client.getUser().getNickName().equals(msg.getTo()) ) {
+                client.sendMessage(msg);
                 return true;
             }
         }
-        Log.e(TAG, "User " + ANSI_BLUE + nickName + ANSI_RED + " not found");*/
+        Log.e(TAG, "User " + ANSI_BLUE + msg.getTo() + ANSI_RED + " not found");
         return false;
     }
 
     public void sendUserList(ClientHandler clientHandler) {
-       /* StringBuilder users = new StringBuilder();
-        users.append(CmdRsp.RSP_USERS_LIST);
-        users.append(" ");
+        List<String> users = new ArrayList<>();
         for(ClientHandler client: clients) {
-            users.append( client.getUser().getNickName());
-            users.append(" ");
+            users.add(client.getUser().getNickName());
         }
 
         if(clientHandler != null) {
-            clientHandler.sendMessage(users.toString());
+            clientHandler.sendMessage(new UsersListMessage( users.toArray(new String[0])) );
         } else {
             for(ClientHandler client: clients) {
-                client.sendMessage(users.toString());
+                client.sendMessage( new UsersListMessage( users.toArray(new String[0])) );
             }
-        }*/
+        }
     }
 
     public AuthService getAuthService() {

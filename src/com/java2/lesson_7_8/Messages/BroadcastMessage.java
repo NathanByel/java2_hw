@@ -1,32 +1,43 @@
 package com.java2.lesson_7_8.Messages;
 
-import com.java2.lesson_7_8.User;
-
 import java.util.UUID;
 
 public class BroadcastMessage extends Message {
     private String from;
-    public BroadcastMessage(String from, String msg) {
-        super(MessageType.BROADCAST_MESSAGE, msg);
+    public BroadcastMessage(String from, String text) {
+        super(MessageType.BROADCAST_MESSAGE, text);
         this.from = from;
+    }
+
+    public BroadcastMessage() {
+        this(null, null);
+    }
+
+    public String getText() {
+        return (String) super.data;
+    }
+
+    public String getFrom() {
+        return from;
     }
 
     @Override
     public String serialize() {
-        //if(getUser() != null) {
-        //    return super.uuid + ":" + type + ":" + getUser().getNickName() + ":" + getUser().getPass();
-        //}
+        if( (from != null) && (getText() != null) ) {
+            return super.uuid + ":" + type + ":" + from + ":" + getText();
+        }
         return null;
     }
 
     @Override
     public boolean deserialize(String data) {
-        String[] fields = data.split(":");
+        String[] fields = data.split(":", 4);
         if (fields.length != 4) return false;
-        if ( MessageType.valueOf(fields[1]) != MessageType.AUTH_MESSAGE ) return false;
+        if ( MessageType.valueOf(fields[1]) != MessageType.BROADCAST_MESSAGE ) return false;
 
         super.uuid = UUID.fromString(fields[0]);
-        super.data = new User(fields[2], fields[3]);
+        from = fields[2];
+        super.data = fields[3];
         return true;
     }
 }
