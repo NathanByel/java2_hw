@@ -1,4 +1,4 @@
-package com.java2.lesson_7;
+package com.java2.lesson_7_8;
 
 public class User {
     private final String nickName;
@@ -16,4 +16,14 @@ public class User {
     public String getPass() {
         return pass;
     }
+
+    /*
+    public void setNickName(String nickName) {
+        this.nickName = nickName;
+    }
+
+    public void setPass(String pass) {
+        this.pass = pass;
+    }
+    */
 }

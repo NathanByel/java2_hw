@@ -1,7 +1,6 @@
-package com.java2.lesson_7.Client;
+package com.java2.lesson_7_8.Client;
 
-import com.java2.lesson_7.CmdRsp;
-import com.java2.lesson_7.Log;
+import com.java2.lesson_7_8.CmdRsp;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -81,26 +80,23 @@ public class LoginWindow extends JFrame implements ClientUI {
         });
 
 
-        buttonIn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String nickName = nickNameField.getText();
-                String pass = new String( passwordField.getPassword());
-                if( nickName.equals(INPUT_NICK_TEXT) || pass.equals(INPUT_PASS_TEXT) ) {
-                    JOptionPane.showMessageDialog(null, "Заполните оба поля!");
-                    return;
-                }
-
-                nickNameField.setEnabled(false);
-                passwordField.setEnabled(false);
-                buttonIn.setEnabled(false);
-                clientController.logIn(nickName, pass);
+        buttonIn.addActionListener(e -> {
+            String nickName = nickNameField.getText();
+            String pass = new String( passwordField.getPassword());
+            if( nickName.equals(INPUT_NICK_TEXT) || pass.equals(INPUT_PASS_TEXT) ) {
+                JOptionPane.showMessageDialog(null, "Заполните оба поля!");
+                return;
             }
+
+            nickNameField.setEnabled(false);
+            passwordField.setEnabled(false);
+            buttonIn.setEnabled(false);
+            clientController.logIn(nickName, pass);
         });
     }
 
     @Override
-    public void statusCallback(String s) {
+    public void statusCallback(CmdRsp s) {
         if(s.equals(CmdRsp.RSP_OK_AUTH)) {
             //JOptionPane.showMessageDialog(null,"Вы успешно вошли!");
             this.dispose();
@@ -109,6 +105,8 @@ public class LoginWindow extends JFrame implements ClientUI {
             JOptionPane.showMessageDialog(null,"Ошибка авторизации! Не верный логин или пароль!");
         } else if(s.equals(CmdRsp.RSP_NICK_BUSY)) {
             JOptionPane.showMessageDialog(null,"Ошибка авторизации! Пользователь уже в сети!");
+        } else if(s.equals(CmdRsp.RSP_AUTH_TIMEOUT)) {
+            JOptionPane.showMessageDialog(null,"Таймаут авторизации!");
         } else {
             JOptionPane.showMessageDialog(null,"Ошибка подключения!");
         }
